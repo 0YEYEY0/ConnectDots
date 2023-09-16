@@ -1,27 +1,28 @@
 package com.example.connectdots;
 
-
-
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
-import javafx.scene.shape.Line;
+import javafx.scene.control.Label;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
-public class Main extends Application {
-    private Punto[][] puntos = new Punto[10][10]; // Matriz de puntos
-    private Punto puntoSeleccionado = null; // Punto que el jugador está conectando
-    private Line lineaActual = null; // Línea que el jugador está dibujando
+import java.util.ArrayList;
+import java.util.List;
 
-    private Pane root; // Declarar la variable root aquí
-    private VBox playerBox; // Panel de jugadores
+public class Main extends Application {
+    private Punto[][] puntos = new Punto[10][10];
+    private Pane root;
+    private VBox playerBox;
+    private Button[] jugadores;
+    private Label[] puntajes;
+    private int[] puntajesJugadores;
+    private int jugadorActualIndex = 0;
+    private boolean[][] cuadradosFormados = new boolean[9][9];
 
     public static void main(String[] args) {
         launch(args);
@@ -29,44 +30,60 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Mi Juego");
+        primaryStage.setTitle("Connect Dots");
         BorderPane borderPane = new BorderPane();
-        root = new Pane(); // Inicializar la variable root aquí
+        root = new Pane();
         Scene scene = new Scene(borderPane, 900, 600);
         primaryStage.setScene(scene);
 
-        // Crear matriz de puntos
+        jugadores = new Button[4];
+        puntajes = new Label[4];
+        puntajesJugadores = new int[4];
+
+        playerBox = new VBox(10);
+        playerBox.setPadding(new Insets(10));
+
+        for (int i = 0; i < jugadores.length; i++) {
+            jugadores[i] = new Button("Jugador " + (i + 1));
+            Color jugadorColor = Color.web(obtenerColorJugador(i));
+            BackgroundFill backgroundFill = new BackgroundFill(jugadorColor, CornerRadii.EMPTY, Insets.EMPTY);
+            Background background = new Background(backgroundFill);
+            jugadores[i].setBackground(background);
+
+            puntajesJugadores[i] = 0;
+            puntajes[i] = new Label("Puntaje: " + puntajesJugadores[i]);
+            puntajes[i].setStyle("-fx-font-weight: bold");
+
+            HBox playerInfo = new HBox(10);
+            playerInfo.getChildren().addAll(jugadores[i], puntajes[i]);
+            playerBox.getChildren().add(playerInfo);
+        }
+
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                puntos[i][j] = new Punto(50 + i * 50, 50 + j * 50);
+                puntos[i][j] = new Punto(50 + i * 50, 50 + j * 50, i, j);
                 root.getChildren().add(puntos[i][j]);
             }
         }
-
-        playerBox = new VBox(10); // Panel de jugadores
-        playerBox.setPadding(new Insets(10));
-        Button addPlayerButton = new Button("Agregar Jugador");
-        addPlayerButton.setOnAction(e -> agregarJugador());
-        playerBox.getChildren().add(addPlayerButton);
 
         borderPane.setCenter(root);
         borderPane.setRight(playerBox);
 
         scene.setOnMouseClicked(event -> {
-            if (puntoSeleccionado == null) {
-                // El jugador selecciona el primer punto
-                puntoSeleccionado = encontrarPuntoClic(event.getX(), event.getY());
-            } else {
-                // El jugador selecciona el segundo punto
-                Punto segundoPunto = encontrarPuntoClic(event.getX(), event.getY());
-                if (segundoPunto != null && !segundoPunto.equals(puntoSeleccionado)) {
-                    // Conectar los puntos con una línea
+            Punto puntoClic = encontrarPuntoClic(event.getX(), event.getY());
+            if (puntoClic != null && !puntoClic.estaConectado()) {
+                if (puntoSeleccionado == null) {
+                    puntoSeleccionado = puntoClic;
+                } else if (!puntoSeleccionado.equals(puntoClic)) {
                     Line linea = new Line(puntoSeleccionado.getCenterX(), puntoSeleccionado.getCenterY(),
-                            segundoPunto.getCenterX(), segundoPunto.getCenterY());
-                    root.getChildren().add(linea); // Agregar la línea al Pane
-                    lineaActual = linea;
+                            puntoClic.getCenterX(), puntoClic.getCenterY());
+                    root.getChildren().add(linea);
 
-                    // Reiniciar la selección de puntos
+                    verificarCuadrados(puntoSeleccionado, puntoClic);
+
+                    jugadorActualIndex = (jugadorActualIndex + 1) % jugadores.length;
+                    puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
+
                     puntoSeleccionado = null;
                 }
             }
@@ -76,47 +93,149 @@ public class Main extends Application {
         primaryStage.show();
     }
 
+    private Punto puntoSeleccionado = null;
+
     private Punto encontrarPuntoClic(double x, double y) {
         for (int i = 0; i < 10; i++) {
             for (int j = 0; j < 10; j++) {
-                if (puntos[i][j].contains(x, y) && !puntos[i][j].conectado) {
-                    return puntos[i][j];
+                Punto punto = puntos[i][j];
+                if (punto.contains(x, y) && !punto.estaConectado()) {
+                    return punto;
                 }
             }
         }
         return null;
     }
 
-    private void agregarJugador() {
-        if (playerBox.getChildren().size() < 4) {
-            // Crea un nuevo botón de jugador
-            Button jugadorButton = new Button("Jugador " + (playerBox.getChildren().size() + 1));
-            // Asigna un color al jugador (cambia esto según tus colores deseados)
-            jugadorButton.setStyle("-fx-background-color: " + obtenerColorJugador());
-
-            playerBox.getChildren().add(jugadorButton);
-        }
+    private String obtenerColorJugador(int index) {
+        String[] colores = {"#FF0000", "#0000FF", "#00FF00", "#FFFF00"};
+        return colores[index % colores.length];
     }
 
-    private String obtenerColorJugador() {
-        // Agrega aquí tu lógica para obtener colores para cada jugador
-        // Puedes utilizar CSS para establecer los colores o generar colores aleatorios
-        // Ejemplo: "red", "blue", "green", "yellow", etc.
-        // Asegúrate de llevar un seguimiento de los colores asignados a cada jugador.
-        // Retorna el color correspondiente como una cadena.
-        return "gray"; // Cambia esto según tus necesidades
+    private void verificarCuadrados(Punto punto1, Punto punto2) {
+        int fila1 = punto1.getFila();
+        int columna1 = punto1.getColumna();
+        int fila2 = punto2.getFila();
+        int columna2 = punto2.getColumna();
+
+        // Verificar si se forma un cuadrado
+        if (Math.abs(fila1 - fila2) == 1 && Math.abs(columna1 - columna2) == 1) {
+            int minFila = Math.min(fila1, fila2);
+            int maxFila = Math.max(fila1, fila2);
+            int minColumna = Math.min(columna1, columna2);
+            int maxColumna = Math.max(columna1, columna2);
+
+            // Verificar si el cuadrado ya se formó
+            if (!cuadradosFormados[minFila][minColumna]) {
+                boolean cuadradoCompleto = true;
+
+                // Verificar si todas las líneas que forman el cuadrado están conectadas
+                for (int i = minFila; i <= maxFila; i++) {
+                    for (int j = minColumna; j <= maxColumna; j++) {
+                        if (!puntos[i][j].estaConectado()) {
+                            cuadradoCompleto = false;
+                            break;
+                        }
+                    }
+                    if (!cuadradoCompleto) break;
+                }
+
+                // Si el cuadrado está completo, marcarlo como formado
+                if (cuadradoCompleto) {
+                    cuadradosFormados[minFila][minColumna] = true;
+                    puntajesJugadores[jugadorActualIndex]++;
+                    puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
+                    System.out.println("Cuadrado formado en [" + minFila + "][" + minColumna + "]");
+                }
+            }
+        }
     }
 
     private class Punto extends Circle {
-        private boolean conectado = false; // Indicador de si el punto ya está conectado
+        private int fila;
+        private int columna;
 
-        public Punto(double x, double y) {
-            super(5, javafx.scene.paint.Color.BLACK); // Tamaño y color de los puntos
+        public Punto(double x, double y, int fila, int columna) {
+            super(5, javafx.scene.paint.Color.BLACK);
             setCenterX(x);
             setCenterY(y);
+            this.fila = fila;
+            this.columna = columna;
+        }
+
+        public boolean estaConectado() {
+            return root.getChildren().stream()
+                    .filter(child -> child instanceof Line)
+                    .map(child -> (Line) child)
+                    .anyMatch(linea -> (linea.getStartX() == getCenterX() && linea.getStartY() == getCenterY() &&
+                            linea.getEndX() == getCenterX() && linea.getEndY() == getCenterY()) ||
+                            (linea.getEndX() == getCenterX() && linea.getEndY() == getCenterY() &&
+                                    linea.getStartX() == getCenterX() && linea.getStartY() == getCenterY()));
+        }
+
+        public int getFila() {
+            return fila;
+        }
+
+        public int getColumna() {
+            return columna;
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
