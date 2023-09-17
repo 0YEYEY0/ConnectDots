@@ -13,8 +13,10 @@ import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
-public class Main extends Application {
+public class Main extends Application implements Observer {
     private Punto[][] puntos = new Punto[10][10];
     private Pane root;
     private VBox playerBox;
@@ -149,6 +151,11 @@ public class Main extends Application {
                 }
             }
         }
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        root.getChildren().add((Line) arg);
     }
 
     private class Punto extends Circle {

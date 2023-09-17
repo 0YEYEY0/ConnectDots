@@ -1,5 +1,7 @@
 package com.example.connectdots;
 
+import javafx.scene.shape.Line;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
@@ -11,8 +13,10 @@ public class Cliente extends Observable implements Runnable {
 
     private int puerto;
 
-    public Cliente(int puerto) {
+    private Line linea;
+    public Cliente(int puerto, Line linea) {
         this.puerto = puerto;
+        this.linea = linea;
     }
 
     @Override
