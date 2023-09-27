@@ -26,7 +26,7 @@ public class PuntoList {
             for (int j = 0; j < numCols; j++) {
                 double x = startX + j * spacing;
                 double y = startY + i * spacing;
-                puntos[i][j] = new Punto(x, y, i, j);
+                puntos[i][j] = new Punto(x, y);
 
                 if (i < numRows - 1) {
                     lineaHorizontal[i][j] = false;
@@ -38,6 +38,9 @@ public class PuntoList {
         }
     }
 
+
+
+
     public int getNumRows() {
         return numRows;
     }
@@ -48,6 +51,14 @@ public class PuntoList {
 
     public Punto getPunto(int fila, int columna) {
         return puntos[fila][columna];
+    }
+
+    public double getSpacingX() {
+        return spacing / (numCols - 1);
+    }
+
+    public double getSpacingY() {
+        return spacing / (numRows - 1);
     }
 
     public int getRow(Punto punto) {
@@ -98,31 +109,20 @@ public class PuntoList {
         lineaVertical[fila][columna] = true;
     }
 
-    public class Punto extends Circle {
-        private int fila;
-        private int columna;
+    public static class Punto extends Circle {
         private List<Line> conexiones = new ArrayList<>(); // Lista de conexiones
 
-        public Punto(double x, double y, int fila, int columna) {
+        public Punto(double x, double y) {
             super(5, javafx.scene.paint.Color.BLACK);
             setCenterX(x);
             setCenterY(y);
-            this.fila = fila;
-            this.columna = columna;
         }
 
         public void conectar(Line linea) {
             conexiones.add(linea); // Agregar la línea a la lista de conexiones
         }
-
-        public int getFila() {
-            return fila;
-        }
-
-        public int getColumna() {
-            return columna;
-        }
     }
 }
+
 
 

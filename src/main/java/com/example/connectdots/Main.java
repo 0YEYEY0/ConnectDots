@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -21,6 +22,7 @@ public class Main extends Application {
     private int jugadorActualIndex = 0;
     private boolean[][] cuadradosFormados = new boolean[9][9];
     private PuntoList.Punto puntoSeleccionado = null;
+    private PuntoList.Punto puntero;
 
     public static void main(String[] args) {
         launch(args);
@@ -65,6 +67,8 @@ public class Main extends Application {
             }
         }
 
+        crearPuntero();
+
         borderPane.setCenter(root);
         borderPane.setRight(playerBox);
 
@@ -87,6 +91,38 @@ public class Main extends Application {
                 }
             }
         });
+
+        // Manejo de eventos de teclado para mover el puntero
+        scene.setOnKeyPressed(event -> {
+            double currentX = puntero.getCenterX();
+            double currentY = puntero.getCenterY();
+            double moveAmount = 50; // Cantidad de movimiento en píxeles
+
+            switch (event.getCode()) {
+                case UP:
+                    currentY -= moveAmount;
+                    break;
+                case DOWN:
+                    currentY += moveAmount;
+                    break;
+                case LEFT:
+                    currentX -= moveAmount;
+                    break;
+                case RIGHT:
+                    currentX += moveAmount;
+                    break;
+            }
+
+            // Asegúrate de que el puntero no salga de los límites de la ventana
+            currentX = Math.max(0, Math.min(currentX, scene.getWidth()));
+            currentY = Math.max(0, Math.min(currentY, scene.getHeight()));
+
+            puntero.setCenterX(currentX);
+            puntero.setCenterY(currentY);
+        });
+
+        // Establecer el enfoque en el Scene para recibir eventos del teclado
+        scene.getRoot().requestFocus();
 
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -147,7 +183,21 @@ public class Main extends Application {
             }
         }
     }
+
+    private void crearPuntero() {
+        puntero = new PuntoList.Punto(50, 50); // Inicializa en la posición (50, 50)
+        puntero.setFill(Color.YELLOW); // Establece el color a amarillo
+        root.getChildren().add(puntero);
+    }
 }
+
+
+
+
+
+
+
+
 
 
 
