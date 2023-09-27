@@ -11,13 +11,8 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
-
-public class Main extends Application implements Observer {
-    private Punto[][] puntos = new Punto[10][10];
+public class Main extends Application {
+    private PuntoList puntos;
     private Pane root;
     private VBox playerBox;
     private Button[] jugadores;
@@ -25,6 +20,7 @@ public class Main extends Application implements Observer {
     private int[] puntajesJugadores;
     private int jugadorActualIndex = 0;
     private boolean[][] cuadradosFormados = new boolean[9][9];
+    private PuntoList.Punto puntoSeleccionado = null;
 
     public static void main(String[] args) {
         launch(args);
@@ -61,10 +57,11 @@ public class Main extends Application implements Observer {
             playerBox.getChildren().add(playerInfo);
         }
 
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                puntos[i][j] = new Punto(50 + i * 50, 50 + j * 50, i, j);
-                root.getChildren().add(puntos[i][j]);
+        puntos = new PuntoList(10, 10, 50, 50, 50);
+
+        for (int i = 0; i < puntos.getNumRows(); i++) {
+            for (int j = 0; j < puntos.getNumCols(); j++) {
+                root.getChildren().add(puntos.getPunto(i, j));
             }
         }
 
@@ -72,8 +69,8 @@ public class Main extends Application implements Observer {
         borderPane.setRight(playerBox);
 
         scene.setOnMouseClicked(event -> {
-            Punto puntoClic = encontrarPuntoClic(event.getX(), event.getY());
-            if (puntoClic != null && !puntoClic.estaConectado()) {
+            PuntoList.Punto puntoClic = encontrarPuntoClic(event.getX(), event.getY());
+            if (puntoClic != null && !puntos.estaConectado(puntoClic)) {
                 if (puntoSeleccionado == null) {
                     puntoSeleccionado = puntoClic;
                 } else if (!puntoSeleccionado.equals(puntoClic)) {
@@ -95,13 +92,11 @@ public class Main extends Application implements Observer {
         primaryStage.show();
     }
 
-    private Punto puntoSeleccionado = null;
-
-    private Punto encontrarPuntoClic(double x, double y) {
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                Punto punto = puntos[i][j];
-                if (punto.contains(x, y) && !punto.estaConectado()) {
+    private PuntoList.Punto encontrarPuntoClic(double x, double y) {
+        for (int i = 0; i < puntos.getNumRows(); i++) {
+            for (int j = 0; j < puntos.getNumCols(); j++) {
+                PuntoList.Punto punto = puntos.getPunto(i, j);
+                if (punto.contains(x, y) && !puntos.estaConectado(punto)) {
                     return punto;
                 }
             }
@@ -114,11 +109,11 @@ public class Main extends Application implements Observer {
         return colores[index % colores.length];
     }
 
-    private void verificarCuadrados(Punto punto1, Punto punto2) {
-        int fila1 = punto1.getFila();
-        int columna1 = punto1.getColumna();
-        int fila2 = punto2.getFila();
-        int columna2 = punto2.getColumna();
+    private void verificarCuadrados(PuntoList.Punto punto1, PuntoList.Punto punto2) {
+        int fila1 = puntos.getRow(punto1);
+        int columna1 = puntos.getCol(punto1);
+        int fila2 = puntos.getRow(punto2);
+        int columna2 = puntos.getCol(punto2);
 
         // Verificar si se forma un cuadrado
         if (Math.abs(fila1 - fila2) == 1 && Math.abs(columna1 - columna2) == 1) {
@@ -134,7 +129,7 @@ public class Main extends Application implements Observer {
                 // Verificar si todas las líneas que forman el cuadrado están conectadas
                 for (int i = minFila; i <= maxFila; i++) {
                     for (int j = minColumna; j <= maxColumna; j++) {
-                        if (!puntos[i][j].estaConectado()) {
+                        if (!puntos.estaConectado(puntos.getPunto(i, j))) {
                             cuadradoCompleto = false;
                             break;
                         }
@@ -152,43 +147,9 @@ public class Main extends Application implements Observer {
             }
         }
     }
-
-    @Override
-    public void update(Observable o, Object arg) {
-        root.getChildren().add((Line) arg);
-    }
-
-    private class Punto extends Circle {
-        private int fila;
-        private int columna;
-
-        public Punto(double x, double y, int fila, int columna) {
-            super(5, javafx.scene.paint.Color.BLACK);
-            setCenterX(x);
-            setCenterY(y);
-            this.fila = fila;
-            this.columna = columna;
-        }
-
-        public boolean estaConectado() {
-            return root.getChildren().stream()
-                    .filter(child -> child instanceof Line)
-                    .map(child -> (Line) child)
-                    .anyMatch(linea -> (linea.getStartX() == getCenterX() && linea.getStartY() == getCenterY() &&
-                            linea.getEndX() == getCenterX() && linea.getEndY() == getCenterY()) ||
-                            (linea.getEndX() == getCenterX() && linea.getEndY() == getCenterY() &&
-                                    linea.getStartX() == getCenterX() && linea.getStartY() == getCenterY()));
-        }
-
-        public int getFila() {
-            return fila;
-        }
-
-        public int getColumna() {
-            return columna;
-        }
-    }
 }
+
+
 
 
 
