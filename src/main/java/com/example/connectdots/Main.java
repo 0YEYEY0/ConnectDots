@@ -10,6 +10,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 
 /**
@@ -61,7 +62,7 @@ public class Main extends Application {
     /**
      * Matriz que registra los cuadrados formados en el juego.
      */
-    private boolean[][] cuadradosFormados = new boolean[9][9];
+    private boolean[][][] cuadradosFormados = new boolean[8][8][4];
 
     /**
      * Punto seleccionado durante el juego.
@@ -229,7 +230,9 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         actualizarTurno(); // Llama a esta función al inicio para asegurarte de que el turno se muestre correctamente
+
     }
+
 
     /**
      * Actualiza el turno del jugador actual y aumenta el puntaje del jugador actual en 1.
@@ -249,7 +252,7 @@ public class Main extends Application {
         }
 
         // Suma 1 al puntaje del jugador actual
-        puntajesJugadores[jugadorActualIndex]++;
+        puntajesJugadores[jugadorActualIndex]++; //suma 1 punto al seleccionar un jugador
         puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
     }
 
@@ -265,38 +268,74 @@ public class Main extends Application {
         int fila2 = puntos.getRow(punto2);
         int columna2 = puntos.getCol(punto2);
 
-        // Verifica si se forma un cuadrado (ambos puntos están a una distancia de 1 en fila y columna)
-        if (Math.abs(fila1 - fila2) == 1 && Math.abs(columna1 - columna2) == 1) {
-            int minFila = Math.min(fila1, fila2);
-            int maxFila = Math.max(fila1, fila2);
-            int minColumna = Math.min(columna1, columna2);
-            int maxColumna = Math.max(columna1, columna2);
+        //Verifica si las lineas son verticales o horizontales
+        boolean Horizontal = fila1 == fila2;
+        boolean Vertical = columna1 == columna2;
 
-            // Verifica si el cuadrado ya se formó
-            if (!cuadradosFormados[minFila][minColumna]) {
-                boolean cuadradoCompleto = true;
+        if (Horizontal) {
+            if (columna1 < columna2) {
+                // izquierda a derecha
+                cuadradosFormados[fila1][columna1][0] = true;
+            } else {
+                // derecha a izquierza
+                cuadradosFormados[fila1][columna2][0] = true;
+            }
+        } else if (Vertical) {
+            if (fila1 < fila2) {
+                // arriba a abajo
+                cuadradosFormados[fila1][columna1][1] = true;
+            } else {
+                // abajo a arriba
+                cuadradosFormados[fila2][columna1][1] = true;
+            }
+        }
 
-                // Verifica si todas las líneas que forman el cuadrado están conectadas
-                for (int i = minFila; i <= maxFila; i++) {
-                    for (int j = minColumna; j <= maxColumna; j++) {
-                        if (!puntos.estaConectado(puntos.getPunto(i, j))) {
-                            cuadradoCompleto = false;
-                            break;
-                        }
-                    }
-                    if (!cuadradoCompleto) break;
-                }
-
-                // Si el cuadrado está completo, marcarlo como formado y aumentar el puntaje del jugador actual
-                if (cuadradoCompleto) {
-                    cuadradosFormados[minFila][minColumna] = true;
-                    puntajesJugadores[jugadorActualIndex]++;
-                    puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
-                    System.out.println("Cuadrado formado en [" + minFila + "][" + minColumna + "]");
+        // Check if squares are formed and award points
+        int puntos = 0;
+        for (int row = 0; row < 7; row++) {
+            for (int col = 0; col < 7; col++) {
+                boolean cuadrado = cuadradosFormados[row][col][0] && cuadradosFormados[row][col][1] &&
+                        cuadradosFormados[row][col+1][0] && cuadradosFormados[row+1][col][1];
+                if (cuadrado && !cuadradosFormados[row][col][2]) {
+                    puntos++;
+                    cuadradosFormados[row][col][2] = true; // Mark square as awarded
                 }
             }
         }
+
+        // Da los puntos al jugador respectivo
+        if (puntos > 0) {
+            puntajesJugadores[jugadorActualIndex-1] += puntos;
+            puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex-1]);
+            listaJugadores.avanzarTurno();
+            actualizarTurno();
+        }
     }
+
+    /**
+     * Get the line between two points.
+     *
+     * @param punto1 The first point.
+     * @param punto2 The second point.
+     * @return The line between the points.
+     */
+    private Line getLineBetweenPoints(PuntoList.Punto punto1, PuntoList.Punto punto2) {
+        Line line = new Line(
+                punto1.getCenterX(),
+                punto1.getCenterY(),
+                punto2.getCenterX(),
+                punto2.getCenterY()
+        );
+
+        line.setStroke(coloresJugadores[jugadorActualIndex]);
+        // Update the turn after drawing the line
+        listaJugadores.avanzarTurno();
+        actualizarTurno();
+
+        return line;
+
+
+         }
 
     /**
      * Crea un puntero visual en la posición inicial (50, 50) con color amarillo y lo agrega al panel raíz.
@@ -307,80 +346,6 @@ public class Main extends Application {
         root.getChildren().add(puntero);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
