@@ -17,12 +17,21 @@ public class Main extends Application {
     private Pane root;
     private VBox playerBox;
     private Button[] jugadores;
+    private Label turnoLabel;
     private Label[] puntajes;
     private int[] puntajesJugadores;
     private int jugadorActualIndex = 0;
     private boolean[][] cuadradosFormados = new boolean[9][9];
     private PuntoList.Punto puntoSeleccionado = null;
     private PuntoList.Punto puntero;
+    private ListaEnlazada listaJugadores;
+
+    private Color[] coloresJugadores = {
+            Color.RED,
+            Color.BLUE,
+            Color.GREEN,
+            Color.YELLOW
+    };
 
     public static void main(String[] args) {
         launch(args);
@@ -43,12 +52,30 @@ public class Main extends Application {
         playerBox = new VBox(10);
         playerBox.setPadding(new Insets(10));
 
+        // Crea una lista enlazada de jugadores
+        listaJugadores = new ListaEnlazada();
+        listaJugadores.agregar("Jugador 1");
+        listaJugadores.agregar("Jugador 2");
+        listaJugadores.agregar("Jugador 3");
+        listaJugadores.agregar("Jugador 4");
+        listaJugadores.iniciarTurnos();
+
         for (int i = 0; i < jugadores.length; i++) {
             jugadores[i] = new Button("Jugador " + (i + 1));
-            Color jugadorColor = Color.web(obtenerColorJugador(i));
+            Color jugadorColor = coloresJugadores[i];
             BackgroundFill backgroundFill = new BackgroundFill(jugadorColor, CornerRadii.EMPTY, Insets.EMPTY);
             Background background = new Background(backgroundFill);
             jugadores[i].setBackground(background);
+
+            final int jugadorIndex = i; // Necesario para acceder a la variable en el evento
+            jugadores[i].setOnAction(event -> {
+                // Cambia el jugador actual cuando se hace clic en el botón del jugador
+                listaJugadores.iniciarTurnos();
+                for (int j = 0; j < jugadorIndex; j++) {
+                    listaJugadores.avanzarTurno();
+                }
+                actualizarTurno();
+            });
 
             puntajesJugadores[i] = 0;
             puntajes[i] = new Label("Puntaje: " + puntajesJugadores[i]);
@@ -59,11 +86,42 @@ public class Main extends Application {
             playerBox.getChildren().add(playerInfo);
         }
 
+        // Label para mostrar el turno del jugador actual
+        turnoLabel = new Label();
+        turnoLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
+
         puntos = new PuntoList(10, 10, 50, 50, 50);
 
         for (int i = 0; i < puntos.getNumRows(); i++) {
             for (int j = 0; j < puntos.getNumCols(); j++) {
-                root.getChildren().add(puntos.getPunto(i, j));
+                PuntoList.Punto punto = puntos.getPunto(i, j);
+                root.getChildren().add(punto);
+
+                // Maneja el evento de clic en el punto
+                punto.setOnMouseClicked(event -> {
+                    if (!puntos.estaConectado(punto) && puntoSeleccionado != null) {
+                        Line linea = new Line(
+                                puntoSeleccionado.getCenterX(),
+                                puntoSeleccionado.getCenterY(),
+                                punto.getCenterX(),
+                                punto.getCenterY()
+                        );
+
+                        // Establece un color de línea para el jugador actual
+                        linea.setStroke(coloresJugadores[jugadorActualIndex]);
+                        root.getChildren().add(linea);
+
+                        verificarCuadrados(puntoSeleccionado, punto);
+
+                        // Avanza al siguiente jugador en la lista enlazada
+                        listaJugadores.avanzarTurno();
+                        actualizarTurno();
+
+                        puntoSeleccionado = null;
+                    } else {
+                        puntoSeleccionado = punto;
+                    }
+                });
             }
         }
 
@@ -71,28 +129,8 @@ public class Main extends Application {
 
         borderPane.setCenter(root);
         borderPane.setRight(playerBox);
+        borderPane.setTop(turnoLabel); // Agrega el Label de turno en la parte superior
 
-        scene.setOnMouseClicked(event -> {
-            PuntoList.Punto puntoClic = encontrarPuntoClic(event.getX(), event.getY());
-            if (puntoClic != null && !puntos.estaConectado(puntoClic)) {
-                if (puntoSeleccionado == null) {
-                    puntoSeleccionado = puntoClic;
-                } else if (!puntoSeleccionado.equals(puntoClic)) {
-                    Line linea = new Line(puntoSeleccionado.getCenterX(), puntoSeleccionado.getCenterY(),
-                            puntoClic.getCenterX(), puntoClic.getCenterY());
-                    root.getChildren().add(linea);
-
-                    verificarCuadrados(puntoSeleccionado, puntoClic);
-
-                    jugadorActualIndex = (jugadorActualIndex + 1) % jugadores.length;
-                    puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
-
-                    puntoSeleccionado = null;
-                }
-            }
-        });
-
-        // Manejo de eventos de teclado para mover el puntero
         scene.setOnKeyPressed(event -> {
             double currentX = puntero.getCenterX();
             double currentY = puntero.getCenterY();
@@ -126,24 +164,22 @@ public class Main extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.show();
+        actualizarTurno(); // Llama a esta función al inicio para asegurarte de que el turno se muestre correctamente
     }
 
-    private PuntoList.Punto encontrarPuntoClic(double x, double y) {
-        for (int i = 0; i < puntos.getNumRows(); i++) {
-            for (int j = 0; j < puntos.getNumCols(); j++) {
-                PuntoList.Punto punto = puntos.getPunto(i, j);
-                if (punto.contains(x, y) && !puntos.estaConectado(punto)) {
-                    return punto;
-                }
+    private void actualizarTurno() {
+        String jugadorActual = listaJugadores.obtenerJugadorActual();
+        turnoLabel.setText("Turno de: " + jugadorActual);
+        for (int i = 0; i < jugadores.length; i++) {
+            if (jugadores[i].getText().equals(jugadorActual)) {
+                jugadorActualIndex = i;
             }
         }
-        return null;
+        // Sumar 1 al puntaje del jugador actual
+        puntajesJugadores[jugadorActualIndex]++;
+        puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
     }
 
-    private String obtenerColorJugador(int index) {
-        String[] colores = {"#FF0000", "#0000FF", "#00FF00", "#FFFF00"};
-        return colores[index % colores.length];
-    }
 
     private void verificarCuadrados(PuntoList.Punto punto1, PuntoList.Punto punto2) {
         int fila1 = puntos.getRow(punto1);
@@ -173,7 +209,7 @@ public class Main extends Application {
                     if (!cuadradoCompleto) break;
                 }
 
-                // Si el cuadrado está completo, marcarlo como formado
+                // Si el cuadrado está completo, marcarlo como formado y aumentar el puntaje
                 if (cuadradoCompleto) {
                     cuadradosFormados[minFila][minColumna] = true;
                     puntajesJugadores[jugadorActualIndex]++;
@@ -184,12 +220,29 @@ public class Main extends Application {
         }
     }
 
+
+
+
     private void crearPuntero() {
         puntero = new PuntoList.Punto(50, 50); // Inicializa en la posición (50, 50)
         puntero.setFill(Color.YELLOW); // Establece el color a amarillo
         root.getChildren().add(puntero);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

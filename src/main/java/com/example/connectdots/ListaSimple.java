@@ -20,6 +20,8 @@ public class ListaSimple<T> {
             throw new IndexOutOfBoundsException("Índice fuera de rango");
         }
 
+
+
         Nodo<T> nodoActual = cabeza;
         for (int i = 0; i < indice; i++) {
             nodoActual = nodoActual.siguiente;
