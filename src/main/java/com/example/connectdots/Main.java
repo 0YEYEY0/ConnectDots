@@ -307,6 +307,9 @@ public class Main extends Application {
             puntajesJugadores[jugadorActualIndex] += puntos;
             puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
 
+            //pasa el turno del jugador
+            listaJugadores.avanzarTurno();
+            actualizarTurno();
         }
     }
 
@@ -319,12 +322,6 @@ public class Main extends Application {
         root.getChildren().add(puntero);
     }
 }
-
-
-
-
-
-
 
 
 
