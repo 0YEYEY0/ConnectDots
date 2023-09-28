@@ -252,8 +252,8 @@ public class Main extends Application {
         }
 
         // Suma 1 al puntaje del jugador actual
-        puntajesJugadores[jugadorActualIndex]++; //suma 1 punto al seleccionar un jugador
-        puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
+        //puntajesJugadores[jugadorActualIndex]++; //suma 1 punto al seleccionar un jugador
+        //puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
     }
 
     /**
@@ -290,7 +290,7 @@ public class Main extends Application {
             }
         }
 
-        // Check if squares are formed and award points
+        // Verifica si se genera un cuadrado y agrega al puntaje
         int puntos = 0;
         for (int row = 0; row < 7; row++) {
             for (int col = 0; col < 7; col++) {
@@ -298,44 +298,19 @@ public class Main extends Application {
                         cuadradosFormados[row][col+1][0] && cuadradosFormados[row+1][col][1];
                 if (cuadrado && !cuadradosFormados[row][col][2]) {
                     puntos++;
-                    cuadradosFormados[row][col][2] = true; // Mark square as awarded
+                    cuadradosFormados[row][col][2] = true; // Se marca el cuadrado formado
                 }
             }
         }
 
         // Da los puntos al jugador respectivo
         if (puntos > 0) {
-            puntajesJugadores[jugadorActualIndex-1] += puntos;
-            puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex-1]);
+            puntajesJugadores[jugadorActualIndex] += puntos;
+            puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
             listaJugadores.avanzarTurno();
             actualizarTurno();
         }
     }
-
-    /**
-     * Get the line between two points.
-     *
-     * @param punto1 The first point.
-     * @param punto2 The second point.
-     * @return The line between the points.
-     */
-    private Line getLineBetweenPoints(PuntoList.Punto punto1, PuntoList.Punto punto2) {
-        Line line = new Line(
-                punto1.getCenterX(),
-                punto1.getCenterY(),
-                punto2.getCenterX(),
-                punto2.getCenterY()
-        );
-
-        line.setStroke(coloresJugadores[jugadorActualIndex]);
-        // Update the turn after drawing the line
-        listaJugadores.avanzarTurno();
-        actualizarTurno();
-
-        return line;
-
-
-         }
 
     /**
      * Crea un puntero visual en la posición inicial (50, 50) con color amarillo y lo agrega al panel raíz.
