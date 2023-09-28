@@ -294,8 +294,7 @@ public class Main extends Application {
         int puntos = 0;
         for (int row = 0; row < 7; row++) {
             for (int col = 0; col < 7; col++) {
-                boolean cuadrado = cuadradosFormados[row][col][0] && cuadradosFormados[row][col][1] &&
-                        cuadradosFormados[row][col+1][0] && cuadradosFormados[row+1][col][1];
+                boolean cuadrado = cuadradosFormados[row][col][0] && cuadradosFormados[row][col][1] && cuadradosFormados[row][col+1][0] && cuadradosFormados[row+1][col][1];
                 if (cuadrado && !cuadradosFormados[row][col][2]) {
                     puntos++;
                     cuadradosFormados[row][col][2] = true; // Se marca el cuadrado formado
@@ -307,8 +306,7 @@ public class Main extends Application {
         if (puntos > 0) {
             puntajesJugadores[jugadorActualIndex] += puntos;
             puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
-            listaJugadores.avanzarTurno();
-            actualizarTurno();
+
         }
     }
 
