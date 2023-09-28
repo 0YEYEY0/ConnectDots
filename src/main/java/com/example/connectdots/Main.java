@@ -12,20 +12,75 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
 
+/**
+ * Clase principal que representa el juego Connect Dots.
+ */
 public class Main extends Application {
+    // Variables de instancia
+
+    /**
+     * Representa la lista de puntos utilizados en el juego.
+     */
     private PuntoList puntos;
+
+    /**
+     * Panel raíz que contiene todos los elementos del juego.
+     */
     private Pane root;
+
+    /**
+     * Cuadro de jugador que muestra información sobre los jugadores.
+     */
     private VBox playerBox;
+
+    /**
+     * Arreglo de botones que representan a los jugadores.
+     */
     private Button[] jugadores;
+
+    /**
+     * Etiqueta que muestra el turno del jugador actual.
+     */
     private Label turnoLabel;
+
+    /**
+     * Arreglo de etiquetas que muestran los puntajes de los jugadores.
+     */
     private Label[] puntajes;
+
+    /**
+     * Arreglo que almacena los puntajes de los jugadores.
+     */
     private int[] puntajesJugadores;
+
+    /**
+     * Índice del jugador actual en el arreglo de jugadores.
+     */
     private int jugadorActualIndex = 0;
+
+    /**
+     * Matriz que registra los cuadrados formados en el juego.
+     */
     private boolean[][] cuadradosFormados = new boolean[9][9];
+
+    /**
+     * Punto seleccionado durante el juego.
+     */
     private PuntoList.Punto puntoSeleccionado = null;
+
+    /**
+     * Punto que representa un puntero en el juego.
+     */
     private PuntoList.Punto puntero;
+
+    /**
+     * Lista enlazada que contiene los nombres de los jugadores.
+     */
     private ListaEnlazada listaJugadores;
 
+    /**
+     * Arreglo de colores utilizados para representar a los jugadores.
+     */
     private Color[] coloresJugadores = {
             Color.RED,
             Color.BLUE,
@@ -33,10 +88,19 @@ public class Main extends Application {
             Color.YELLOW
     };
 
+    /**
+     * Método principal que inicia la aplicación JavaFX.
+     *
+     * @param args Argumentos de la línea de comandos (no utilizados).
+     */
     public static void main(String[] args) {
         launch(args);
     }
-
+    /**
+     * Este método de inicio de la aplicación configura la interfaz gráfica y maneja la lógica del juego.
+     *
+     * @param primaryStage El escenario principal de la aplicación.
+     */
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Connect Dots");
@@ -167,38 +231,52 @@ public class Main extends Application {
         actualizarTurno(); // Llama a esta función al inicio para asegurarte de que el turno se muestre correctamente
     }
 
+    /**
+     * Actualiza el turno del jugador actual y aumenta el puntaje del jugador actual en 1.
+     */
     private void actualizarTurno() {
+        // Obtiene el nombre del jugador actual
         String jugadorActual = listaJugadores.obtenerJugadorActual();
+
+        // Actualiza la etiqueta de turno para mostrar el nombre del jugador actual
         turnoLabel.setText("Turno de: " + jugadorActual);
+
+        // Encuentra el índice del jugador actual en el arreglo de botones de jugadores
         for (int i = 0; i < jugadores.length; i++) {
             if (jugadores[i].getText().equals(jugadorActual)) {
                 jugadorActualIndex = i;
             }
         }
-        // Sumar 1 al puntaje del jugador actual
+
+        // Suma 1 al puntaje del jugador actual
         puntajesJugadores[jugadorActualIndex]++;
         puntajes[jugadorActualIndex].setText("Puntaje: " + puntajesJugadores[jugadorActualIndex]);
     }
 
-
+    /**
+     * Verifica si se forma un cuadrado cuando se conectan dos puntos y, si es así, aumenta el puntaje del jugador actual.
+     *
+     * @param punto1 El primer punto conectado.
+     * @param punto2 El segundo punto conectado.
+     */
     private void verificarCuadrados(PuntoList.Punto punto1, PuntoList.Punto punto2) {
         int fila1 = puntos.getRow(punto1);
         int columna1 = puntos.getCol(punto1);
         int fila2 = puntos.getRow(punto2);
         int columna2 = puntos.getCol(punto2);
 
-        // Verificar si se forma un cuadrado
+        // Verifica si se forma un cuadrado (ambos puntos están a una distancia de 1 en fila y columna)
         if (Math.abs(fila1 - fila2) == 1 && Math.abs(columna1 - columna2) == 1) {
             int minFila = Math.min(fila1, fila2);
             int maxFila = Math.max(fila1, fila2);
             int minColumna = Math.min(columna1, columna2);
             int maxColumna = Math.max(columna1, columna2);
 
-            // Verificar si el cuadrado ya se formó
+            // Verifica si el cuadrado ya se formó
             if (!cuadradosFormados[minFila][minColumna]) {
                 boolean cuadradoCompleto = true;
 
-                // Verificar si todas las líneas que forman el cuadrado están conectadas
+                // Verifica si todas las líneas que forman el cuadrado están conectadas
                 for (int i = minFila; i <= maxFila; i++) {
                     for (int j = minColumna; j <= maxColumna; j++) {
                         if (!puntos.estaConectado(puntos.getPunto(i, j))) {
@@ -209,7 +287,7 @@ public class Main extends Application {
                     if (!cuadradoCompleto) break;
                 }
 
-                // Si el cuadrado está completo, marcarlo como formado y aumentar el puntaje
+                // Si el cuadrado está completo, marcarlo como formado y aumentar el puntaje del jugador actual
                 if (cuadradoCompleto) {
                     cuadradosFormados[minFila][minColumna] = true;
                     puntajesJugadores[jugadorActualIndex]++;
@@ -220,15 +298,17 @@ public class Main extends Application {
         }
     }
 
-
-
-
+    /**
+     * Crea un puntero visual en la posición inicial (50, 50) con color amarillo y lo agrega al panel raíz.
+     */
     private void crearPuntero() {
         puntero = new PuntoList.Punto(50, 50); // Inicializa en la posición (50, 50)
         puntero.setFill(Color.YELLOW); // Establece el color a amarillo
         root.getChildren().add(puntero);
     }
 }
+
+
 
 
 
